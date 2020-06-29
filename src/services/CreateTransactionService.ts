@@ -18,14 +18,21 @@ class CreateTransactionService {
     title,
     value,
     type,
+    category,
   }: RequestDTO): Promise<Transaction> {
     const categoryRepository = getRepository(Category);
 
-    const category = await categoryRepository.findOne({
-      where: { title },
+    let checkCategory = await categoryRepository.findOne({
+      where: { title: category },
     });
 
-    if (category) throw new AppError('This category already exist');
+    if (!checkCategory) {
+      checkCategory = categoryRepository.create({
+        title: category,
+      });
+
+      await categoryRepository.save(checkCategory);
+    }
 
     const transactionRepository = getCustomRepository(TransactionsRepository);
 
@@ -41,7 +48,7 @@ class CreateTransactionService {
       title,
       value,
       type,
-      category,
+      category: checkCategory,
     });
 
     await transactionRepository.save(transaction);
